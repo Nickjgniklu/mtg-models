@@ -1,0 +1,51 @@
+{
+  "started": "2026-09-27T21:41:00+00:00",
+  "argv": [
+    "C:\\Users\\nickj\\source\\repos\\the-gathering-bgsub\\ml\\cardid\\train_table_detector_dual.py",
+    "--run",
+    "bgsub-a",
+    "--resume-single",
+    "data/runs/table-a-realclutter-v5/best.pt",
+    "--epochs",
+    "10",
+    "--steps-per-epoch",
+    "750",
+    "--batch",
+    "16",
+    "--device",
+    "cuda",
+    "--workers",
+    "2",
+    "--val-scenes",
+    "60"
+  ],
+  "args": {
+    "run": "bgsub-a",
+    "epochs": 10,
+    "steps_per_epoch": 750,
+    "batch": 16,
+    "lr": 0.001,
+    "backbone_lr": 0.0003,
+    "pose_weight": 1.0,
+    "up_weight": 1.0,
+    "hard_neg_weight": 1.5,
+    "val_scenes": 60,
+    "score_threshold": 0.3,
+    "resume_single": "data/runs/table-a-realclutter-v5/best.pt",
+    "device": "cuda",
+    "workers": 2,
+    "threads": null,
+    "seed": 0
+  },
+  "seed": 0,
+  "device": "cuda",
+  "workers": 2,
+  "threads": 2,
+  "versions": {
+    "python": "3.11.9",
+    "torch": "2.13.0+rocm10.0.0",
+    "torchvision": "0.28.0+rocm10.0.0",
+    "numpy": "2.4.6",
+    "opencv": "5.0.0"
+  }
+}

@@ -1,0 +1,83 @@
+{
+  "version": "2026-09-27-table-a-hardware-stress-ep17",
+  "created": "2026-09-27T13:12:02+00:00",
+  "checkpoint": {
+    "path": "C:\\Users\\nickj\\source\\repos\\the-gathering\\ml\\data\\runs\\table-a-hardware-stress\\best.pt",
+    "sha256": "3fbd8ebca00b6176f741172ed8c8637501cb546a2f011e6e1b1e8e8121a3f165",
+    "run_args": {
+      "manifest_dir": "H:\\the-gathering-cardid\\table-scenes",
+      "run": "table-a-hardware-stress",
+      "epochs": 25,
+      "batch": 8,
+      "lr": 0.001,
+      "backbone_lr": 0.0003,
+      "pose_weight": 1.0,
+      "up_weight": 1.0,
+      "input_size": 384,
+      "train_limit": null,
+      "val_limit": 100,
+      "score_threshold": 0.3,
+      "hardware_stress_rate": 0.25,
+      "resume": "C:/Users/nickj/source/repos/the-gathering/ml/data/runs/table-a-nonstandard-finetune/best.pt",
+      "device": "cuda",
+      "workers": 1,
+      "threads": null,
+      "seed": 0
+    },
+    "training_history": {
+      "epoch": 20,
+      "loss": 0.6430125289236506,
+      "loss_heat": 0.43097942214086654,
+      "loss_pose": 0.09076854177564382,
+      "loss_up": 0.12126456381908307,
+      "seconds": 128.2,
+      "recall": 0.6853932584269663,
+      "precision": 1.0,
+      "n_truth": 801,
+      "n_found": 549
+    }
+  },
+  "contract": {
+    "input": {
+      "name": "table",
+      "shape": [
+        384,
+        384,
+        4
+      ],
+      "dtype": "uint8",
+      "layout": "HWC RGBA"
+    },
+    "outputs": [
+      {
+        "name": "quads",
+        "shape": [
+          40,
+          4,
+          2
+        ],
+        "dtype": "float32",
+        "units": "input pixels, printed order (corner 0 = top-left)"
+      },
+      {
+        "name": "scores",
+        "shape": [
+          40
+        ],
+        "dtype": "float32",
+        "units": "sigmoid probability, descending; apply your own threshold"
+      }
+    ],
+    "table_input": 384,
+    "table_stride": 4,
+    "max_detections": 40,
+    "recommended_score_threshold": 0.3
+  },
+  "opset": 17,
+  "files": {
+    "table_detector.onnx": {
+      "bytes": 3990754,
+      "sha256": "2885258302985132ebe314ae27ef3f54037bb2035d11e681a9958448d5718b1b"
+    }
+  }
+}
