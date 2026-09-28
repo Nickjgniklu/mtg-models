@@ -53,3 +53,51 @@ history-tracked run above.
 
 See `ml/README.md` in the main repo for the full investigation behind each step -- what broke,
 how it was measured, and the same-seed before/after confusion-matrix numbers for every change.
+
+## Reproduction lineage and tiled fusion (`feat/reproduce-table-detector-training`)
+
+A from-scratch reproduction of the lineage above (see `ml/cardid/reproduce_table_detector.py`),
+run to confirm the whole pipeline is actually rebuildable, not just documented:
+
+1. **`repro-a-pretrained`** (120 epochs) -> **`repro-a-nonstandard-finetune`** (50 epochs, later
+   found redundant -- kept in this archive for completeness, not because it did anything: the
+   oversampled non-standard-card catalog it existed to introduce was already baked into the
+   reused dataset from the first epoch) -> **`repro-a-hardware-stress`** (25 epochs) ->
+   **`repro-a-realcapture-hardening`** (20 epochs) -> **`repro-a-hardneg-v4`** (20 epochs) ->
+   **`repro-a-realclutter-v5`** (20 epochs, also found redundant for the same reason as
+   `nonstandard-finetune` -- kept for completeness).
+2. **`repro-a-hardneg-v4` is the best checkpoint of this reproduction**, not the last one: scored
+   against the real-capture golden set directly (not synthetic `val`), it beats the final
+   `repro-a-realclutter-v5` on every measure (recall 87.0%/precision 84.7%/fp_on_negatives 7.4% vs.
+   84.3%/75.8%/18.5%) and is close to or better than the originally-shipped `table-a-realclutter-v5`
+   above, especially on false positives. **Use `repro-a-hardneg-v4`, not `repro-a-realclutter-v5`,
+   as this reproduction's output.**
+3. **`repro-a-hardneg-v4-seed1`** -- a same-recipe retry from a different seed, to see if
+   stochastic variance alone could close the small remaining gap to the historical checkpoint.
+   It didn't (recall 88.0%/precision 83.3%/fp_on_negatives 11.1%, not better overall); kept for
+   reference, not recommended for use.
+4. **`tiled-fusion-a`** and **`tiled-fusion-1920`** -- `TableCenterNet` fixed, frozen (from
+   `repro-a-hardneg-v4`); these `.pt` files are the trainable `FusionHead` *only* (~54k params),
+   not a full detector checkpoint -- load them into `tiled_fusion.TiledFusionDetector.fusion`
+   alongside `repro-a-hardneg-v4/best.pt` as the frozen base, not standalone. `tiled-fusion-a` is
+   trained at 640x640 (the original table-scenes resolution); `tiled-fusion-1920` at 1920x1920
+   (matching the deployed webcam's real capture resolution). **`tiled-fusion-1920` needs
+   `--score-threshold 0.15-0.16`, not the project's usual 0.3** -- its bigger canonical grid
+   produces confidence scores on a different scale; at the wrong threshold it looks like a
+   recall/precision tradeoff against every other approach, but at the right one it beats single-pass,
+   the heuristic tiled-inference dedupe, and `tiled-fusion-a` on both recall and precision at once
+   (89.8%/89.8% vs. the previous best of 87.0%/87.9%). See `ml/README.md`'s "Learned tile fusion"
+   section for the full numbers and the why.
+5. **Both single-pass (`repro-a-hardneg-v4`) and tiled-fusion (`tiled-fusion-1920`) are kept
+   long-term, not one replacing the other** -- single-pass for a smaller/focused capture area
+   (fast: ~11ms CPU / ~5ms GPU per frame), tiled-fusion for a full-table scan at the fixed
+   resolution the product always downscales incoming video to (~15x the CPU cost, ~1.6x on GPU).
+
+`ml/cardid/detect_and_embed.py` (same branch) wires any of the detectors above to the existing
+`Embedder` through one batched crop layer, so one forward pass produces every detected card's
+identifying embedding directly -- no new checkpoint of its own, just a new way of composing
+already-trained ones. Both the plain and tiled combinations export to ONNX cleanly (verified
+against the torch model to floating-point noise).
+
+`exports/repro-a-hardneg-v4/table_detector.onnx` is this lineage's recommended export -- use this,
+not an export of `repro-a-realclutter-v5`, per point 2 above.

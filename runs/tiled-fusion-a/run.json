@@ -1,0 +1,53 @@
+{
+  "started": "2026-09-28T11:47:16+00:00",
+  "argv": [
+    "C:\\Users\\nickj\\source\\repos\\the-gathering-repro\\ml\\cardid\\train_tiled_fusion.py",
+    "--manifest-dir",
+    "H:\\the-gathering-cardid\\table-scenes",
+    "--checkpoint",
+    "data/runs/repro-a-hardneg-v4/best.pt",
+    "--run",
+    "tiled-fusion-a",
+    "--epochs",
+    "15",
+    "--batch",
+    "8",
+    "--val-limit",
+    "100",
+    "--device",
+    "cuda",
+    "--workers",
+    "2",
+    "--seed",
+    "0"
+  ],
+  "args": {
+    "manifest_dir": "H:\\the-gathering-cardid\\table-scenes",
+    "checkpoint": "data\\runs\\repro-a-hardneg-v4\\best.pt",
+    "run": "tiled-fusion-a",
+    "epochs": 15,
+    "batch": 8,
+    "lr": 0.001,
+    "pose_weight": 1.0,
+    "up_weight": 1.0,
+    "train_limit": null,
+    "val_limit": 100,
+    "score_threshold": 0.3,
+    "resume": null,
+    "device": "cuda",
+    "workers": 2,
+    "threads": null,
+    "seed": 0
+  },
+  "seed": 0,
+  "device": "cuda",
+  "workers": 2,
+  "threads": 2,
+  "versions": {
+    "python": "3.11.9",
+    "torch": "2.13.0+rocm10.0.0",
+    "torchvision": "0.28.0+rocm10.0.0",
+    "numpy": "2.4.6",
+    "opencv": "5.0.0"
+  }
+}

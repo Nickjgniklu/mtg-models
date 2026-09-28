@@ -1,0 +1,83 @@
+{
+  "version": "repro-a-hardneg-v4",
+  "created": "2026-09-28T16:55:56+00:00",
+  "checkpoint": {
+    "path": "data\\runs\\repro-a-hardneg-v4\\best.pt",
+    "sha256": "56c001d8138555249a69dc69d3f94cf2ac5fc8bee469d82df290d26d6a0c08e8",
+    "run_args": {
+      "manifest_dir": "H:\\the-gathering-cardid\\table-scenes",
+      "run": "repro-a-hardneg-v4",
+      "epochs": 20,
+      "batch": 16,
+      "lr": 0.001,
+      "backbone_lr": 0.0003,
+      "pose_weight": 1.0,
+      "up_weight": 1.0,
+      "input_size": 384,
+      "train_limit": null,
+      "val_limit": 150,
+      "score_threshold": 0.3,
+      "hardware_stress_rate": 0.15,
+      "resume": "C:\\Users\\nickj\\source\\repos\\the-gathering-repro\\ml\\data\\runs\\repro-a-realcapture-hardening\\best.pt",
+      "device": "cuda",
+      "workers": 2,
+      "threads": null,
+      "seed": 0
+    },
+    "training_history": {
+      "epoch": 19,
+      "loss": 0.07942487538109223,
+      "loss_heat": 0.028690986562209825,
+      "loss_pose": 0.02363745621840159,
+      "loss_up": 0.027096432557639976,
+      "seconds": 103.8,
+      "recall": 0.9809128630705394,
+      "precision": 0.995787700084246,
+      "n_truth": 1205,
+      "n_found": 1187
+    }
+  },
+  "contract": {
+    "input": {
+      "name": "table",
+      "shape": [
+        384,
+        384,
+        4
+      ],
+      "dtype": "uint8",
+      "layout": "HWC RGBA"
+    },
+    "outputs": [
+      {
+        "name": "quads",
+        "shape": [
+          40,
+          4,
+          2
+        ],
+        "dtype": "float32",
+        "units": "input pixels, printed order (corner 0 = top-left)"
+      },
+      {
+        "name": "scores",
+        "shape": [
+          40
+        ],
+        "dtype": "float32",
+        "units": "sigmoid probability, descending; apply your own threshold"
+      }
+    ],
+    "table_input": 384,
+    "table_stride": 4,
+    "max_detections": 40,
+    "recommended_score_threshold": 0.3
+  },
+  "opset": 17,
+  "files": {
+    "table_detector.onnx": {
+      "bytes": 3990754,
+      "sha256": "919badcaf4d4c684badd595c76de9e274e76c987695a4520bc307fd6bfbd4852"
+    }
+  }
+}
