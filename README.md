@@ -101,3 +101,15 @@ against the torch model to floating-point noise).
 
 `exports/repro-a-hardneg-v4/table_detector.onnx` is this lineage's recommended export -- use this,
 not an export of `repro-a-realclutter-v5`, per point 2 above.
+
+`exports/detect-and-embed-repro-a-hardneg-v4-placeholder-embed/detect_and_embed.onnx` -- **the
+detector half is real** (`repro-a-hardneg-v4`, verified against the torch model to
+floating-point noise), **the embedder half is a random-weight placeholder**, not the real
+`Embedder`. This exists to validate the combined graph's shapes/wiring/ONNX-exportability, not
+for real identification: the deployed `embed.onnx` has BatchNorm folded into its conv weights, so
+only 38 of the real `Embedder`'s 242 parameters can be recovered from it (confirmed by direct
+extraction) -- there is no real torch `Embedder` checkpoint available outside the deployed server
+as of this export. Swap in a real one and re-export once available; see
+`ml/detect-and-embed-guide.md` (branch `feat/reproduce-table-detector-training`) for the exact
+recipe and the separate, still-unresolved frame-hypothesis gotcha that also needs fixing before
+this is wired to the real gallery search.

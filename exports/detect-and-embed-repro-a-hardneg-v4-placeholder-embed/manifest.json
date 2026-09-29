@@ -1,0 +1,8 @@
+{
+  "detector": "repro-a-hardneg-v4 (real, single-pass TableCenterNet)",
+  "embedder": "PLACEHOLDER -- random weights, not the real Embedder (see detect-and-embed-guide.md)",
+  "native_size": 384,
+  "max_cards": 20,
+  "sha256": "96549f930b50213146dd079586001fdce8320575978a0b4d70d6e89c1c2a3d13",
+  "size_bytes": 8112817
+}
