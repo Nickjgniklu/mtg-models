@@ -1,0 +1,10 @@
+{
+  "detector": "tiled-fusion-1920 (real: repro-a-hardneg-v4 frozen backbone + tiled-fusion-1920 FusionHead)",
+  "embedder": "real -- cfbender/oracle models/recogniser.pt, sha256 52b3528e...a0bf, confirmed identical to the currently-deployed embedder",
+  "native_size": 1920,
+  "max_cards": 20,
+  "score_threshold_note": "use 0.15-0.16, not 0.3 -- see tiled_fusion.py for why",
+  "sha256": "207828996f701c83d32e00f855f433e8393024426ade6e60bd161bbf8e6cef00",
+  "size_bytes": 42258098,
+  "known_limitation": "single modern-frame embedding per card, not compatible with search.onnx as-is (expects 14 frame hypotheses) -- see ml/detect-and-embed-guide.md"
+}

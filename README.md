@@ -115,11 +115,28 @@ the currently-deployed bundle's own `manifest.json`. Loads into `cardid.model.Em
 between the two crop methods' embeddings through this same checkpoint, confirming the crop math
 and the recovered weights are both correct, not just structurally valid.
 
-**`exports/detect-and-embed-repro-a-hardneg-v4-real-embed/detect_and_embed.onnx`** -- **the
-recommended `DetectAndEmbed` export: real detector, real embedder**, verified against the torch
-model to floating-point noise. The one remaining known limitation is architectural, not a weights
-problem: this module crops only the "modern" frame window per card (see `detect_and_embed.py`'s
-module docstring), so its single embedding per card is not yet compatible with the real
-`search.onnx` (which expects 14 frame-hypothesis embeddings and looks up each gallery art's own
-frame index into that batch) -- see `ml/detect-and-embed-guide.md`'s "frame-hypothesis gotcha"
-section for the three documented options to close that gap, none implemented yet.
+**`exports/detect-and-embed-repro-a-hardneg-v4-real-embed/detect_and_embed.onnx`** -- single-pass
+detector + real embedder, verified against the torch model to floating-point noise. Tested
+end-to-end (`ml/cardid/evaluate_detect_and_embed.py`): 98.4% detection recall, 72.7% modern-frame
+top-1 identification against the real gallery. That identification number is capped by
+`native_size=384`'s already-downsampled crop source, not a bug -- see the export below and
+`ml/detect-and-embed-guide.md`'s "Tested end-to-end" section for the full explanation.
+
+**`exports/detect-and-embed-tiled-fusion-1920-real-embed/detect_and_embed.onnx`** -- tiled-fusion
+detector (native 1920 resolution) + real embedder, same verification. Tested the same way: 93.7%
+detection recall, **93.0%** modern-frame top-1 identification -- matching the reference
+`embed.onnx` pipeline's number, because cropping from the true native resolution (not an
+already-downsampled 384px canvas) preserves the detail the embedder needs. **This is the
+recommended export when identification quality matters**; the single-pass export above is
+recommended when latency on CPU/WASM matters more (~23ms vs ~191ms per frame on this project's
+desktop CPU -- the gap nearly disappears on GPU, ~20ms vs ~21ms, since embedding the cards found,
+not detecting them, dominates GPU time for both). Needs `--score-threshold 0.15-0.16` at
+inference time, not the project's usual 0.3 -- see `tiled_fusion.py` for why.
+
+Both exports share the same known limitation, architectural, not a weights problem: this module
+crops only the "modern" frame window per card (see `detect_and_embed.py`'s module docstring), so
+its single embedding per card is not yet compatible with the real `search.onnx` (which expects 14
+frame-hypothesis embeddings and looks up each gallery art's own frame index into that batch) --
+see `ml/detect-and-embed-guide.md`'s "frame-hypothesis gotcha" section for the three documented
+options to close that gap, none implemented yet. Non-modern-frame cards identify meaningfully
+worse in both exports (~78-79% top-1) for exactly this reason.
