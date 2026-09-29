@@ -1,9 +1,15 @@
 {
   "detector": "repro-a-hardneg-v4 (real, single-pass TableCenterNet)",
-  "embedder": "real -- cfbender/oracle models/recogniser.pt, sha256 52b3528e...a0bf, confirmed identical to the currently-deployed embedder",
+  "embedder": "real -- cfbender/oracle models/recogniser.pt, sha256 52b3528e...a0bf",
   "native_size": 384,
   "max_cards": 20,
-  "sha256": "892d503d2263ee10641827285f82da0942c51f4fabd41b96dd699781f5e48491",
-  "size_bytes": 8139319,
-  "known_limitation": "single modern-frame embedding per card, not compatible with search.onnx as-is (expects 14 frame hypotheses) -- see ml/detect-and-embed-guide.md"
+  "output_contract": "embeddings (N,MAX_CARDS,14,128) -- all 14 detect.FRAME_NAMES hypotheses per card, feed embeddings[n,k] to search.onnx directly",
+  "sha256": "bfb6532f2ae4059486a5a0563e6c7588fdd8ce600644f7cd1cf19482a8a1994a",
+  "size_bytes": 10210371,
+  "latency_native_pytorch_desktop": {
+    "cpu_ms": 293.1,
+    "gpu_ms": 141.7,
+    "note": "this desktop only, not the deployed onnxruntime-web path"
+  },
+  "tested": "evaluate_detect_and_embed.py: 98.4% detection recall, 74.2% overall top1 / 85.5% top5 identification (all frames, real search.onnx logic) on 10 gallery-verified scenes"
 }

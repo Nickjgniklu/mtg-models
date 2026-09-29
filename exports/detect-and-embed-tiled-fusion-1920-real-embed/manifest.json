@@ -1,10 +1,16 @@
 {
   "detector": "tiled-fusion-1920 (real: repro-a-hardneg-v4 frozen backbone + tiled-fusion-1920 FusionHead)",
-  "embedder": "real -- cfbender/oracle models/recogniser.pt, sha256 52b3528e...a0bf, confirmed identical to the currently-deployed embedder",
+  "embedder": "real -- cfbender/oracle models/recogniser.pt, sha256 52b3528e...a0bf",
   "native_size": 1920,
   "max_cards": 20,
   "score_threshold_note": "use 0.15-0.16, not 0.3 -- see tiled_fusion.py for why",
-  "sha256": "207828996f701c83d32e00f855f433e8393024426ade6e60bd161bbf8e6cef00",
-  "size_bytes": 42258098,
-  "known_limitation": "single modern-frame embedding per card, not compatible with search.onnx as-is (expects 14 frame hypotheses) -- see ml/detect-and-embed-guide.md"
+  "output_contract": "embeddings (N,MAX_CARDS,14,128) -- all 14 detect.FRAME_NAMES hypotheses per card, feed embeddings[n,k] to search.onnx directly",
+  "sha256": "1f5c9a3ba543be3ea2b45e292a628b9181f6462fc7fd32f80d6e51cd547305aa",
+  "size_bytes": 44329155,
+  "latency_native_pytorch_desktop": {
+    "cpu_ms": 434.9,
+    "gpu_ms": 142.1,
+    "note": "this desktop only, not the deployed onnxruntime-web path"
+  },
+  "tested": "evaluate_detect_and_embed.py: 93.7% detection recall, 90.3% overall top1 / 91.9% top5 identification (all frames, real search.onnx logic) on 10 gallery-verified scenes"
 }

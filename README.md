@@ -116,27 +116,27 @@ between the two crop methods' embeddings through this same checkpoint, confirmin
 and the recovered weights are both correct, not just structurally valid.
 
 **`exports/detect-and-embed-repro-a-hardneg-v4-real-embed/detect_and_embed.onnx`** -- single-pass
-detector + real embedder, verified against the torch model to floating-point noise. Tested
-end-to-end (`ml/cardid/evaluate_detect_and_embed.py`): 98.4% detection recall, 72.7% modern-frame
-top-1 identification against the real gallery. That identification number is capped by
-`native_size=384`'s already-downsampled crop source, not a bug -- see the export below and
-`ml/detect-and-embed-guide.md`'s "Tested end-to-end" section for the full explanation.
+detector + real embedder, **now emitting all 14 frame hypotheses per card**
+(`(N, MAX_CARDS, 14, 128)`, feed `embeddings[n,k]` to `search.onnx` directly -- no separate
+`embed.onnx` call needed), verified against the torch model to floating-point noise and against
+`detect.art_crops` directly (cosine similarity 0.985+ on all 14 frames, including every rotated
+two-part one). Tested end-to-end with `search.onnx`'s own per-frame-gather math
+(`ml/cardid/evaluate_detect_and_embed.py`): 98.4% detection recall, **74.2%** top-1 / 85.5% top-5
+identification across all frames (non-modern frames score comparably to modern now, not
+systematically worse).
 
 **`exports/detect-and-embed-tiled-fusion-1920-real-embed/detect_and_embed.onnx`** -- tiled-fusion
-detector (native 1920 resolution) + real embedder, same verification. Tested the same way: 93.7%
-detection recall, **93.0%** modern-frame top-1 identification -- matching the reference
-`embed.onnx` pipeline's number, because cropping from the true native resolution (not an
-already-downsampled 384px canvas) preserves the detail the embedder needs. **This is the
-recommended export when identification quality matters**; the single-pass export above is
-recommended when latency on CPU/WASM matters more (~23ms vs ~191ms per frame on this project's
-desktop CPU -- the gap nearly disappears on GPU, ~20ms vs ~21ms, since embedding the cards found,
-not detecting them, dominates GPU time for both). Needs `--score-threshold 0.15-0.16` at
-inference time, not the project's usual 0.3 -- see `tiled_fusion.py` for why.
+detector (native 1920 resolution) + real embedder, same 14-frame contract and verification. Tested
+the same way: 93.7% detection recall, **90.3%** top-1 / 91.9% top-5 identification across all
+frames -- matching the single-frame-hypothesis reference number from before this fix, but now
+correctly for every frame type, not just modern. **This is the recommended export when
+identification quality matters**; the single-pass export above is recommended when latency matters
+more. Needs `--score-threshold 0.15-0.16` at inference time, not the project's usual 0.3 -- see
+`tiled_fusion.py` for why.
 
-Both exports share the same known limitation, architectural, not a weights problem: this module
-crops only the "modern" frame window per card (see `detect_and_embed.py`'s module docstring), so
-its single embedding per card is not yet compatible with the real `search.onnx` (which expects 14
-frame-hypothesis embeddings and looks up each gallery art's own frame index into that batch) --
-see `ml/detect-and-embed-guide.md`'s "frame-hypothesis gotcha" section for the three documented
-options to close that gap, none implemented yet. Non-modern-frame cards identify meaningfully
-worse in both exports (~78-79% top-1) for exactly this reason.
+**Real cost of the 14-frame fix, not yet resolved**: ~142ms/frame on GPU for *either* detector
+(down from ~240ms before batching all 14 embed calls into one), since embedding 20 cards x 14
+frames now dominates total cost regardless of which detector found them -- roughly 7fps, not yet
+real-time-per-frame. See `ml/detect-and-embed-guide.md`'s latency table and "Known simplifications"
+for the full numbers and the next lever to pull (a smaller `MAX_CARDS` budget, since most real
+scenes have far fewer real cards than the fixed slot count).
