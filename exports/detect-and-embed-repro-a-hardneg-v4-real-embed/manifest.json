@@ -1,0 +1,9 @@
+{
+  "detector": "repro-a-hardneg-v4 (real, single-pass TableCenterNet)",
+  "embedder": "real -- cfbender/oracle models/recogniser.pt, sha256 52b3528e...a0bf, confirmed identical to the currently-deployed embedder",
+  "native_size": 384,
+  "max_cards": 20,
+  "sha256": "892d503d2263ee10641827285f82da0942c51f4fabd41b96dd699781f5e48491",
+  "size_bytes": 8139319,
+  "known_limitation": "single modern-frame embedding per card, not compatible with search.onnx as-is (expects 14 frame hypotheses) -- see ml/detect-and-embed-guide.md"
+}

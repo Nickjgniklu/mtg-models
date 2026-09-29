@@ -102,14 +102,24 @@ against the torch model to floating-point noise).
 `exports/repro-a-hardneg-v4/table_detector.onnx` is this lineage's recommended export -- use this,
 not an export of `repro-a-realclutter-v5`, per point 2 above.
 
-`exports/detect-and-embed-repro-a-hardneg-v4-placeholder-embed/detect_and_embed.onnx` -- **the
-detector half is real** (`repro-a-hardneg-v4`, verified against the torch model to
-floating-point noise), **the embedder half is a random-weight placeholder**, not the real
-`Embedder`. This exists to validate the combined graph's shapes/wiring/ONNX-exportability, not
-for real identification: the deployed `embed.onnx` has BatchNorm folded into its conv weights, so
-only 38 of the real `Embedder`'s 242 parameters can be recovered from it (confirmed by direct
-extraction) -- there is no real torch `Embedder` checkpoint available outside the deployed server
-as of this export. Swap in a real one and re-export once available; see
-`ml/detect-and-embed-guide.md` (branch `feat/reproduce-table-detector-training`) for the exact
-recipe and the separate, still-unresolved frame-hypothesis gotcha that also needs fixing before
-this is wired to the real gallery search.
+`exports/detect-and-embed-repro-a-hardneg-v4-placeholder-embed/detect_and_embed.onnx` -- an
+earlier export with a random-weight placeholder embedder, kept for reference only. **Superseded
+by the export below**, which has a real embedder.
+
+**`runs/recogniser-cfbender-oracle/best.pt`** -- a real, currently-deployed `Embedder` checkpoint,
+recovered from `cfbender/oracle`'s public `models/recogniser.pt` (see that directory's
+`PROVENANCE.md`): sha256 `52b3528e...a0bf`, confirmed byte-identical to the `recogniser` entry in
+the currently-deployed bundle's own `manifest.json`. Loads into `cardid.model.Embedder` with
+`strict=True` (all 242 keys match). Spot-checked against the existing reference crop pipeline
+(`detect.warp_card` + `detect.art_crop("modern")`) on 5 real detections: cosine similarity 0.997+
+between the two crop methods' embeddings through this same checkpoint, confirming the crop math
+and the recovered weights are both correct, not just structurally valid.
+
+**`exports/detect-and-embed-repro-a-hardneg-v4-real-embed/detect_and_embed.onnx`** -- **the
+recommended `DetectAndEmbed` export: real detector, real embedder**, verified against the torch
+model to floating-point noise. The one remaining known limitation is architectural, not a weights
+problem: this module crops only the "modern" frame window per card (see `detect_and_embed.py`'s
+module docstring), so its single embedding per card is not yet compatible with the real
+`search.onnx` (which expects 14 frame-hypothesis embeddings and looks up each gallery art's own
+frame index into that batch) -- see `ml/detect-and-embed-guide.md`'s "frame-hypothesis gotcha"
+section for the three documented options to close that gap, none implemented yet.
