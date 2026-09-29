@@ -1,0 +1,17 @@
+{
+  "detector": "repro-a-hardneg-v4 (real, single-pass TableCenterNet)",
+  "embedder": "real -- cfbender/oracle models/recogniser.pt, sha256 52b3528e...a0bf",
+  "gallery": "real -- extracted directly from H:\the-gathering-cardid\\current\\search.onnx (51417 arts), baked in as graph constants",
+  "native_size": 384,
+  "max_cards": 20,
+  "topk": 5,
+  "output_contract": "indices (N,MAX_CARDS,topk) gallery row indices, scores (N,MAX_CARDS,topk), det_scores (N,MAX_CARDS) detector confidence, quads (N,MAX_CARDS,4,2) -- one call from raw frame to identified cards, no separate embed.onnx or search.onnx call needed",
+  "sha256": "e2375c25c07ff13ecf41ce4ad51d4945e6ac6ad502e31d43b1caa5e2f27b2706",
+  "size_bytes": 37169575,
+  "latency_native_pytorch_desktop": {
+    "cpu_ms": 434.9,
+    "gpu_ms": 145.2,
+    "note": "this desktop only, not the deployed onnxruntime-web path; search itself adds ~0ms on GPU, ~140ms on CPU vs detect+embed alone"
+  },
+  "tested": "verified indices match evaluate_detect_and_embed.py's independently-validated per-slot search exactly (0 mismatches) before export"
+}

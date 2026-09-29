@@ -1,0 +1,18 @@
+{
+  "detector": "tiled-fusion-1920 (real: repro-a-hardneg-v4 frozen backbone + tiled-fusion-1920 FusionHead)",
+  "embedder": "real -- cfbender/oracle models/recogniser.pt, sha256 52b3528e...a0bf",
+  "gallery": "real -- extracted directly from H:\the-gathering-cardid\\current\\search.onnx (51417 arts), baked in as graph constants",
+  "native_size": 1920,
+  "max_cards": 20,
+  "topk": 5,
+  "score_threshold_note": "use 0.15-0.16 on det_scores, not 0.3 -- see tiled_fusion.py for why",
+  "output_contract": "indices (N,MAX_CARDS,topk) gallery row indices, scores (N,MAX_CARDS,topk), det_scores (N,MAX_CARDS) detector confidence, quads (N,MAX_CARDS,4,2) -- one call from raw frame to identified cards, no separate embed.onnx or search.onnx call needed",
+  "sha256": "345e207545dc3fbc9caf51d59959243d4734e29b6b2110fb96180a22169df8bd",
+  "size_bytes": 71296680,
+  "latency_native_pytorch_desktop": {
+    "cpu_ms": 580.9,
+    "gpu_ms": 140.9,
+    "note": "this desktop only, not the deployed onnxruntime-web path; search itself adds ~0ms on GPU, ~145ms on CPU vs detect+embed alone"
+  },
+  "tested": "verified indices match evaluate_detect_and_embed.py's independently-validated per-slot search exactly (0 mismatches) before export"
+}

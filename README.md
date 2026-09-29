@@ -140,3 +140,21 @@ frames now dominates total cost regardless of which detector found them -- rough
 real-time-per-frame. See `ml/detect-and-embed-guide.md`'s latency table and "Known simplifications"
 for the full numbers and the next lever to pull (a smaller `MAX_CARDS` budget, since most real
 scenes have far fewer real cards than the fixed slot count).
+
+### One more step: `search.onnx` baked into the same graph (`ml/cardid/detect_embed_search.py`)
+
+**`exports/detect-embed-search-repro-a-hardneg-v4/detect_embed_search.onnx`** and
+**`exports/detect-embed-search-tiled-fusion-1920/detect_embed_search.onnx`** go all the way: raw
+frame in, `(indices, scores, det_scores, quads)` out -- gallery search included, no separate
+`embed.onnx` or `search.onnx` call needed at all. `DetectEmbedAndSearch` wraps a `DetectAndEmbed`
+with a gallery extracted from a deployed bundle's `search.onnx` (same extraction
+`evaluate_detect_and_embed.py` already used) and runs every `MAX_CARDS` slot's search in the same
+forward pass, batched via one broadcasting matmul rather than a 20-times Python loop. Verified
+against the already-validated per-slot search logic directly: 0 mismatches across every scored
+slot on real data before export.
+
+**Search itself is essentially free on GPU** (142ms -> 145ms, within noise -- a 51417x128 matmul
+is trivial next to the CNN embedding work) but adds a real ~140ms on CPU (293ms -> 435ms,
+single-pass). File size grows to 37-71MB since the whole gallery matrix (~26MB) is now baked in as
+a graph constant, not fetched separately -- a real tradeoff if bundle download size matters more
+than request count.
