@@ -158,3 +158,38 @@ is trivial next to the CNN embedding work) but adds a real ~140ms on CPU (293ms 
 single-pass). File size grows to 37-71MB since the whole gallery matrix (~26MB) is now baked in as
 a graph constant, not fetched separately -- a real tradeoff if bundle download size matters more
 than request count.
+
+### WebGPU compatibility: measured in a real browser, not inferred from a doc table
+
+An earlier pass tried to remove every op absent from onnxruntime-web's *documented* WebGPU operator
+table -- `Mod`/`Xor`/`And`/`Not` (a defensive artifact of a floor-division PyTorch's exporter
+couldn't prove was always non-negative) via a source fix, and leftover `ConstantOfShape` nodes via
+a post-export `ORT_ENABLE_EXTENDED` graph-optimization pass. **That combination was reverted after
+measuring it end-to-end in a real Chromium/Dawn browser on real hardware (AMD 7900 GRE) and finding
+it was a net regression, not a fix**: 94.7ms -> 253.2ms median per-frame latency, a 2.7x slowdown.
+
+The cause, found via onnxruntime's own verbose per-node execution-provider log (`ort.env.logLevel =
+"verbose"` at session creation, not guessable from any static op-support table): `ORT_ENABLE_EXTENDED`
+fuses the top-level gallery-search matmul's `Transpose` into it as `FusedMatMul`
+(`MatMulTransposeFusion`, an extended-level-only pass). `FusedMatMul` has no WebGPU kernel in
+onnxruntime-web, so that one op -- the single largest matmul in the graph (the 51417x128 gallery
+against up to 280 query columns) -- silently fell back to single-threaded CPU/wasm. That one op
+accounted for essentially the entire regression. The *original* graph's CPU fallback (13 small
+nodes: `Div`, `Mod`, `Xor`, `Cast`, `Expand`, etc.) is cheap and, per onnxruntime's own log, entirely
+intentional: "ORT explicitly assigns shape related ops to CPU to improve perf." Removing it bought
+nothing and the optimization pass added back a far more expensive fallback in its place.
+
+**Exports here are the original, unmodified graphs** (the `Mod`/`Xor`/`And`/`Not`/`ConstantOfShape`
+source fix and the `ORT_ENABLE_EXTENDED` step were both reverted). `GridSample` -- this project's
+own long-standing WebGPU worry -- is fine regardless (opset 16-19 supported, these exports use
+opset 18); it was never actually the risk.
+
+**Lesson for future exports of this family**: a WebGPU op-support table only tells you an op has no
+GPU kernel; it says nothing about whether ORT's own graph optimizer will introduce a *new*,
+unsupported, and possibly much more expensive fused op on top of a perfectly fine original graph.
+The only reliable check is the one that found this: load the actual export in a real browser with
+`executionProviders: ["webgpu"]` and `ort.env.logLevel = "verbose"`, read the
+`VerifyEachNodeIsAssignedToAnEp` "Node placements" block from the console, and confirm nothing
+expensive (a big MatMul, a conv) landed on `CPUExecutionProvider` -- small shape/index ops landing
+there are normal and fast. Re-run this check after *any* export-side optimization change, since the
+optimizer's behavior, not the source graph, is what actually determines the placement.
