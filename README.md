@@ -193,3 +193,38 @@ The only reliable check is the one that found this: load the actual export in a 
 expensive (a big MatMul, a conv) landed on `CPUExecutionProvider` -- small shape/index ops landing
 there are normal and fast. Re-run this check after *any* export-side optimization change, since the
 optimizer's behavior, not the source graph, is what actually determines the placement.
+
+## Cross-frame tracking: `runs/track-memory-c` (`feat/track-memory` / `feat/track-memory-gpu`)
+
+`TrackMemory` (`ml/cardid/track_memory.py`) is a small shared-weight GRU that carries a running
+belief about each tracked card forward across video frames, so one noisy frame (motion blur, a bad
+angle) nudges the identification instead of flipping it outright -- see `feat/track-memory`'s own
+commits for the full design (Stage 1 classical track association, Stage 2 this GRU) and
+`feat/track-memory-gpu` for getting it training on an AMD 7900 GRE (ROCm on Windows disables cudnn/
+MIOpen -- ~1.5x per frame, not an order of magnitude -- but it replaces the *need* for multiple CPU
+DataLoader workers entirely, which is what was actually causing OOM kills on this machine).
+
+Trained on 2500 synthetic table sequences (`table_scenes.render_table_scene_sequence`, 8 frames
+each, real movement: slides, hand occlusion, cards entering/leaving) from the 571-card
+gallery-verified pool, giving ~24 repeated exposures per card -- the first attempt used the
+non-sequence-expanded pool (839 tracks, ~1.5 exposures/card) and never got TrackMemory's top-1
+above 0%, not because anything was broken but because a ~51k-way classification loss cannot learn
+from a class it has seen once. 9 of a planned 12 epochs completed (stopped there: the metrics had
+already converged into a stable band and a second system-memory-pressure kill made waiting for the
+last 3 not worth it) --
+
+| | raw (per-frame, no smoothing) | refined (TrackMemory) |
+|---|---|---|
+| top-1 | 82.1% (fixed baseline) | **94.4%** |
+| frame-to-frame flicker rate | 26.7% (fixed baseline) | **3.9%** |
+
+"raw" never changes epoch to epoch by construction (it doesn't touch TrackMemory's weights at all
+-- see `train_track_memory.py`'s `evaluate_val`); refined started at exactly 0% (epoch 0) and
+crossed raw by epoch 3, confirming the smoothing hypothesis this whole feature exists to test:
+temporal smoothing can both identify *and* stabilize better than trusting any single frame.
+
+`runs/track-memory-c/best.pt` is a plain `TrackMemory` state dict (strict-load convention, see
+`model.Embedder`'s checkpoint format, not `detector_checkpoint.py`'s tolerant one). ONNX export and
+wiring the correction layer (`track_identity.py`, already implemented and unit-tested, an external
+pin rather than something baked into the GRU's own training) into `recognizer.worker.ts` are both
+explicitly out of scope for this run -- separate next phases.
