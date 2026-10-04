@@ -224,7 +224,14 @@ crossed raw by epoch 3, confirming the smoothing hypothesis this whole feature e
 temporal smoothing can both identify *and* stabilize better than trusting any single frame.
 
 `runs/track-memory-c/best.pt` is a plain `TrackMemory` state dict (strict-load convention, see
-`model.Embedder`'s checkpoint format, not `detector_checkpoint.py`'s tolerant one). ONNX export and
-wiring the correction layer (`track_identity.py`, already implemented and unit-tested, an external
-pin rather than something baked into the GRU's own training) into `recognizer.worker.ts` are both
-explicitly out of scope for this run -- separate next phases.
+`model.Embedder`'s checkpoint format, not `detector_checkpoint.py`'s tolerant one).
+
+**`exports/track-memory-c/track_memory.onnx`** is the ONNX export (`export_track_memory.py`,
+verified against the torch model over 50 unrolled random steps, max |diff| ~1e-7) -- see
+`ml/track-memory-guide.md` in the code repo for the full integration handoff: the exact
+input/output contract, an onnxruntime-web usage sketch, and what still needs porting (Stage 1
+track association, the single-query gallery search, pose derivation if not calling
+`DetectAndEmbed` directly) before this runs in an app. Wiring the correction layer
+(`track_identity.py`, already implemented and unit-tested, an external pin rather than something
+baked into the GRU's own training) into `recognizer.worker.ts` is explicitly out of scope here --
+a separate next phase, same as the rest of the live-app integration.

@@ -1,0 +1,118 @@
+{
+  "version": "track-memory-c",
+  "created": "2026-10-04T19:17:21+00:00",
+  "checkpoint": {
+    "path": "data\\runs\\track-memory-c\\best.pt",
+    "sha256": "7054385725d81e798c1f7e95ecb7a8230dbf022e736691e48169e5bf94fb2151",
+    "run_args": {
+      "manifest_dir": "H:\\the-gathering-cardid\\table-sequences-big",
+      "detector": "single-pass",
+      "table_checkpoint": "data\\runs\\repro-a-hardneg-v4\\best.pt",
+      "fusion_checkpoint": null,
+      "embed_checkpoint": "data\\runs\\recogniser-cfbender-oracle\\best.pt",
+      "gallery_bundle": "H:\\the-gathering-cardid\\current",
+      "native_size": 384,
+      "score_threshold": 0.3,
+      "run": "track-memory-c",
+      "epochs": 12,
+      "batch": 8,
+      "lr": 0.001,
+      "temperature": 0.1,
+      "pose_weight": 0.1,
+      "train_limit": null,
+      "val_limit": 60,
+      "resume": null,
+      "device": "cuda",
+      "workers": 4,
+      "threads": null,
+      "seed": 0
+    },
+    "training_history": {
+      "epoch": 8,
+      "loss": 5.150427822351176,
+      "loss_embed": 5.078719366477215,
+      "loss_pose": 0.71708457648824,
+      "seconds": 15427.6,
+      "raw_top1": 0.820627802690583,
+      "refined_top1": 0.9439461883408071,
+      "raw_flicker_rate": 0.266839378238342,
+      "refined_flicker_rate": 0.038860103626943004,
+      "n": 446
+    }
+  },
+  "contract": {
+    "inputs": [
+      {
+        "name": "hidden",
+        "shape": [
+          128
+        ],
+        "dtype": "float32",
+        "notes": "zero vector for a new track"
+      },
+      {
+        "name": "embedding",
+        "shape": [
+          128
+        ],
+        "dtype": "float32",
+        "notes": "L2-normalized, the detector's own per-frame best guess (see module docstring)"
+      },
+      {
+        "name": "pose",
+        "shape": [
+          5
+        ],
+        "dtype": "float32",
+        "notes": "cx, cy, short, cos(2*angle), sin(2*angle)"
+      },
+      {
+        "name": "score",
+        "shape": [
+          1
+        ],
+        "dtype": "float32",
+        "notes": "detector confidence, sigmoid-space"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "new_hidden",
+        "shape": [
+          128
+        ],
+        "dtype": "float32",
+        "notes": "feed back in as next frame's hidden for this track"
+      },
+      {
+        "name": "refined_embedding",
+        "shape": [
+          128
+        ],
+        "dtype": "float32",
+        "notes": "L2-normalized, search the gallery against this"
+      },
+      {
+        "name": "refined_pose",
+        "shape": [
+          5
+        ],
+        "dtype": "float32",
+        "notes": "same layout as the input pose"
+      }
+    ],
+    "hidden_dim": 128,
+    "no_batch_dimension": true,
+    "needs_separately": [
+      "track_memory.associate_detections (frame-to-frame track correspondence, classical, not exported)",
+      "track_identity.TrackIdentity (user corrections, plain Python, not exported)"
+    ]
+  },
+  "opset": 17,
+  "files": {
+    "track_memory.onnx": {
+      "bytes": 477127,
+      "sha256": "6265362b87a4d79a8e1f5fa587fdbf343910332618ead05adb8cd2338067192a"
+    }
+  }
+}
